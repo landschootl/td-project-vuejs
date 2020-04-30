@@ -1,10 +1,14 @@
 <template>
   <div class="manage-product">
     <h1>La liste de mes produits :</h1>
-    <div v-for="(product, index) in products" :key="index">
+    <p>Nombre de produit : {{nbProduct}}</p>
+    <p>Prix total des produits : {{totalPrice}} €</p>
+    <p>Champ de recherche : <input type="text" v-model="search"/></p>
+    <div v-for="(product, index) in productsSearch" :key="index">
       <span>{{product.name}} - </span>
       <span>{{product.price}} €</span>
       <span><button @click="updateProduct(product)">Editer le produit</button></span>
+      <span><button @click="deleteProduct(product)">Supprimer le produit</button></span>
     </div>
     <p>
       <button @click="createProduct()">Créer un nouveau produit</button>
@@ -26,7 +30,8 @@ export default {
     return {
       backendUrl: 'https://node-baseapi.herokuapp.com/api',
       products: [],
-      product: {name: 'default', price: 1.0}
+      product: {name: 'default', price: 1.0},
+      search: ''
     }
   },
   methods: {
@@ -67,11 +72,36 @@ export default {
                   alert('Impossible de modifier le produit');
                 });
       }
+    },
+    deleteProduct(product) {
+      axios.delete(`${this.backendUrl}/products/${product.id}`)
+              .then(() => {
+                this.products = this.products.filter(p => p.id !== product.id);
+              })
+              .catch(() => {
+                alert('Impossible de supprimer le produit');
+              });
     }
   },
   computed: {
     isCreateMode() {
       return this.product.id === undefined;
+    },
+    nbProduct() {
+      return this.productsSearch.length;
+    },
+    totalPrice() {
+      return this.productsSearch.length > 0
+          ? this.productsSearch
+            .map(product => product.price)
+            .reduce((total, product) => total + product)
+          : 0;
+    },
+    productsSearch() {
+      return this.search === ''
+              ? this.products
+              : this.products
+                      .filter(product => product.name.startsWith(this.search));
     }
   },
   created() {
